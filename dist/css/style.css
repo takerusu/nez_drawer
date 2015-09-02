@@ -1,0 +1,115 @@
+html {
+  overflow: hidden;
+}
+html,
+body,
+.contents {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+.contents {
+  padding: 10px 10px;
+}
+ul {
+  padding-left: 0;
+  list-style-type: none;
+}
+.todos-view-wrapper {
+  height: calc(100% - 110px);
+  overflow: hidden;
+  padding: 5px;
+}
+.todos-view {
+  width: 100%;
+  height: calc(100% - 110px);
+}
+.none {
+  display: none;
+}
+.todos {
+  width: 100%;
+  max-height: calc(100% - 110px);
+  overflow-y: scroll;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 110px;
+  margin: 0;
+  padding: 0 8px;
+}
+.todo-item {
+  background-color: #FFF;
+  padding: 10px 15px;
+  margin-bottom: -1px;
+  border: 1px solid #ddd;
+}
+.navbar {
+  width: 100%;
+  text-align: center;
+}
+.navbar ul {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: inline-block;
+}
+.navbar li {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  display: inline-block;
+  vertical-align: top;
+}
+.add-todo {
+  display: table;
+  border-collapse: separate;
+  text-align: center;
+  position: absolute;
+  width: 100%;
+  left: 0;
+  right: 0;
+  bottom: 70px;
+  margin: auto;
+}
+.add-todo input {
+  vertical-align: middle;
+  display: table-cell;
+  width: 80%;
+  height: 27px;
+}
+.add-todo button {
+  display: table-cell;
+  margin-left: -1px;
+}
+.btn {
+  vertical-align: middle;
+  padding: 8px 12px;
+  background-color: #FFFFFF;
+  border-style: solid;
+  box-shadow: 0 0 0 0;
+}
+.btn-circle {
+  width: 20px;
+  height: 20px;
+}
+.selected {
+  background-color: #b9b9b9;
+}
+.navbar-bottom {
+  background-color: #666666;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 64px;
+}
+.navbar-item {
+  width: 12%;
+  text-align: center;
+}
+.navbar-text {
+  font-size: x-small;
+}
