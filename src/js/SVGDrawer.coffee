@@ -110,14 +110,15 @@ class NEZDrawer extends SVGDrawer
       x: start_line.x + start_line.width
       y: start_line.y
     opt = @plot(json, option)
+    console.log opt
     end_line =
       shape: "path"
       width: 6
       height: 1
-      x: opt.x + opt.width
-      y: opt.y
-      xx: opt.x + opt.width + 6
-      yy: opt.y
+      x: start_line.width + opt.width
+      y: start_line.y
+      xx: start_line.width + opt.width + 6
+      yy: start_line.y
     plot = {}
     plot.shape = "List"
     plot.value = [start_line, opt, end_line]
@@ -139,17 +140,45 @@ class NEZDrawer extends SVGDrawer
         @plot(target, option)
       when "NonTerminal"
         @NonTerminal(json.value, option)
+      when "Sequence"
+        sequence_width = 6
+        ret = {shape: "List", width: -sequence_width, height: 0}
+        ret.x = option.x
+        ret.y = option.y
+        ret.value = []
+        for v in json.value
+          p = @plot(v, option)
+          ret.width += p.width + sequence_width
+          ret.height = p.height if ret.height < p.height
+          ret.value.push p
+        x = 0
+        path = []
+        for v in ret.value
+          v.x += x
+          x += v.width + sequence_width
+          path.push
+            shape: "path"
+            x: v.x + v.width
+            y: ret.y
+            xx: v.x + v.width + sequence_width
+            yy: ret.y
+        path.pop()
+        ret.value.push.apply(ret.value, path)
+        ret.x = 0
+        ret.y = 0
+        ret
       when "Choice"
         choice_width = 20
+        choice_height = 10
         console.log json
-        ret = {shape: "List", width: 0, height: -@padding}
+        ret = {shape: "List", width: 0, height: -choice_height}
         ret.x = option.x
         ret.y = option.y
         ret.value = []
         for v in json.value
           p = @plot(v, option)
           ret.width = p.width if ret.width < p.width
-          ret.height += p.height + @padding
+          ret.height += p.height + choice_height
           ret.value.push p
         ret.width += 2 * choice_width
         y = ret.y - ret.height / 2
@@ -157,22 +186,29 @@ class NEZDrawer extends SVGDrawer
         for v in ret.value
           v.x = ret.width / 2 - v.width / 2
           v.y = y + v.height / 2
-          y = y + v.height + @padding
+          y = y + v.height + choice_height
+          leftxx = v.x
+          rightx = v.x + v.width
+          if v.shape is "List"
+            leftxx += v.value[0].x
+            rightx += v.value[0].x
           left =
             shape: "path"
             x: ret.x
             y: ret.y
-            xx: v.x
+            xx: leftxx
             yy: v.y
           right =
             shape: "path"
-            x: v.x + v.width
+            x: rightx
             y: v.y
             xx: ret.x + ret.width
             yy: ret.y
           path.push left
           path.push right
         ret.value.push.apply(ret.value, path)
+        ret.x = 0
+        ret.y = 0
         ret
 
   NonTerminal : (name, option) ->
@@ -197,6 +233,10 @@ class NEZDrawer extends SVGDrawer
         option.value = []
         option.shape = "List"
         for p in plot.value
+          p.x += plot.x
+          p.y += plot.y
+          p.xx += plot.x if p.xx?
+          p.yy += plot.y if p.yy?
           opt = @draw(p)
           # option.width += opt.width
           # option.height = opt.height if option.height < opt.height
