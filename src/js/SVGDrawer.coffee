@@ -72,7 +72,7 @@ class SVGDrawer
       option = a
       a = [option.x, option.y]
       b = [option.xx, option.yy]
-      if option.through
+      if option.through or option.loop
         paddingY = if option.height > 0 then @padding else -@padding
         start = new Point(a)
         end = new Point(b)
@@ -87,6 +87,9 @@ class SVGDrawer
         b3 = new Point(p5.x, p4.y)
         p6 = new Point(p5.x, p4.y + option.height - paddingY)
         b4 = new Point(p5.x, p6.y + paddingY)
+        if option.loop
+          start.x += @padding * 2
+          end.x -= @padding * 2
         route =
           [start, "Q", b1, p1, "L", p2, "Q", b2, p3,
           "L", p4, "Q", b3, p5, "L", p6, "Q", b4 ,end].join(" ")
@@ -258,6 +261,51 @@ class NEZDrawer extends SVGDrawer
           xx: left.xx + p.width + option_width
           yy : ret.y
         ret.value.push path, left, right
+        ret
+      when "Repetition", "Repetition1"
+        repetition_width = 10
+        repetition_height = 10
+        ret =
+          shape: "List"
+          x: option.x
+          y: option.y
+          width: 0
+          height: 0
+        ret.value = []
+        p = @plot(json.value[0], option)
+        p.moveX = repetition_width
+        ret.width = p.width + repetition_width * 2
+        ret.height = p.height + repetition_height * 2
+        loops =
+          shape: "path"
+          loop: true
+          x: ret.x
+          y: ret.y
+          xx: ret.x + ret.width
+          yy: ret.y
+          height: ret.height / 2
+        path =
+          shape: "path"
+          through: true
+          x: ret.x
+          y: ret.y
+          xx: ret.x + ret.width
+          yy: ret.y
+          height: -ret.height / 2
+        left =
+          shape: "path"
+          x: ret.x
+          y : ret.y
+          xx: ret.x + repetition_width
+          yy : ret.y
+        right =
+          shape: "path"
+          x: left.xx + p.width
+          y : ret.y
+          xx: left.xx + p.width + repetition_width
+          yy : ret.y
+        ret.value.push p, loops, left, right
+        ret.value.push path if json.tag is "Repetition"
         ret
 
 

@@ -99,7 +99,7 @@ SVGDrawer = (function() {
       option = a;
       a = [option.x, option.y];
       b = [option.xx, option.yy];
-      if (option.through) {
+      if (option.through || option.loop) {
         paddingY = option.height > 0 ? this.padding : -this.padding;
         start = new Point(a);
         end = new Point(b);
@@ -114,6 +114,10 @@ SVGDrawer = (function() {
         b3 = new Point(p5.x, p4.y);
         p6 = new Point(p5.x, p4.y + option.height - paddingY);
         b4 = new Point(p5.x, p6.y + paddingY);
+        if (option.loop) {
+          start.x += this.padding * 2;
+          end.x -= this.padding * 2;
+        }
         route = [start, "Q", b1, p1, "L", p2, "Q", b2, p3, "L", p4, "Q", b3, p5, "L", p6, "Q", b4, end].join(" ");
         return this.makePathObj(route);
       }
@@ -204,7 +208,7 @@ NEZDrawer = (function(superClass) {
   };
 
   NEZDrawer.prototype.plot = function(json, option) {
-    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, m, name, opt, option_height, option_width, p, path, production, ref, ref1, ref2, ref3, ret, right, sequence_width, target, v, x, y;
+    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, loops, m, name, opt, option_height, option_width, p, path, production, ref, ref1, ref2, ref3, repetition_height, repetition_width, ret, right, sequence_width, target, v, x, y;
     switch (json.tag) {
       case "List":
         production = json.value[0];
@@ -345,6 +349,59 @@ NEZDrawer = (function(superClass) {
           yy: ret.y
         };
         ret.value.push(path, left, right);
+        return ret;
+      case "Repetition":
+      case "Repetition1":
+        repetition_width = 10;
+        repetition_height = 10;
+        ret = {
+          shape: "List",
+          x: option.x,
+          y: option.y,
+          width: 0,
+          height: 0
+        };
+        ret.value = [];
+        p = this.plot(json.value[0], option);
+        p.moveX = repetition_width;
+        ret.width = p.width + repetition_width * 2;
+        ret.height = p.height + repetition_height * 2;
+        loops = {
+          shape: "path",
+          loop: true,
+          x: ret.x,
+          y: ret.y,
+          xx: ret.x + ret.width,
+          yy: ret.y,
+          height: ret.height / 2
+        };
+        path = {
+          shape: "path",
+          through: true,
+          x: ret.x,
+          y: ret.y,
+          xx: ret.x + ret.width,
+          yy: ret.y,
+          height: -ret.height / 2
+        };
+        left = {
+          shape: "path",
+          x: ret.x,
+          y: ret.y,
+          xx: ret.x + repetition_width,
+          yy: ret.y
+        };
+        right = {
+          shape: "path",
+          x: left.xx + p.width,
+          y: ret.y,
+          xx: left.xx + p.width + repetition_width,
+          yy: ret.y
+        };
+        ret.value.push(p, loops, left, right);
+        if (json.tag === "Repetition") {
+          ret.value.push(path);
+        }
         return ret;
     }
   };
