@@ -1,12 +1,14 @@
 window.onload = () ->
   # SVGDrawer = require('./SVGDrawer.coffee')
   input = "Number = { '-'? INT (FRAC EXP? #Float / '' #Integer) } S*"
-  inputn = "A = aaa"
-  inputc = "A = AAAAAA / AB / AC"
-  inputs = "A = AAAAAA AB AC A"
-  inputcs = "A = AAAAAA AB AC / A / AAA BB"
+  input0 = "A = aaa"
+  input1 = "A = AAAAAA / AB / AC"
+  input2 = "A = AAAAAA AB AC A"
+  input3 = "A = AAAAAA (AB AC) A"
+  input4 = "A = A?"
+  inputall = "A = AA (A / AB)? BB / B"
   parser = new Parser()
-  o = parser.parse inputcs
+  o = parser.parse inputall
 
   drawer = new NEZDrawer($('.svg2'))
   drawer.getCharSize()

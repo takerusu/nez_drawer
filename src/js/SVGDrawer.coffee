@@ -72,6 +72,25 @@ class SVGDrawer
       option = a
       a = [option.x, option.y]
       b = [option.xx, option.yy]
+      if option.through
+        paddingY = if option.height > 0 then @padding else -@padding
+        start = new Point(a)
+        end = new Point(b)
+        width = end.x - start.x
+        p1 = new Point(start.x + @padding, start.y - paddingY)
+        b1 = new Point(start.x + @padding, start.y)
+        p2 = new Point(p1.x, start.y - option.height + paddingY)
+        p3 = new Point(p2.x + @padding, p2.y - paddingY)
+        b2 = new Point(p2.x, p3.y)
+        p4 = new Point(start.x + width - @padding * 2, p3.y)
+        p5 = new Point(p4.x + @padding, p4.y + paddingY)
+        b3 = new Point(p5.x, p4.y)
+        p6 = new Point(p5.x, p4.y + option.height - paddingY)
+        b4 = new Point(p5.x, p6.y + paddingY)
+        route =
+          [start, "Q", b1, p1, "L", p2, "Q", b2, p3,
+          "L", p4, "Q", b3, p5, "L", p6, "Q", b4 ,end].join(" ")
+        return @makePathObj(route)
     start = new Point(a)
     end = new Point(b)
     if start.x is end.x || start.y is end.y
@@ -98,6 +117,7 @@ class SVGDrawer
 
 class NEZDrawer extends SVGDrawer
   show : (json) ->
+    console.log json.value[0].value[1]
     start_line =
       shape: "path"
       width: 6
@@ -110,7 +130,6 @@ class NEZDrawer extends SVGDrawer
       x: start_line.x + start_line.width
       y: start_line.y
     opt = @plot(json, option)
-    console.log opt
     end_line =
       shape: "path"
       width: 6
@@ -126,7 +145,10 @@ class NEZDrawer extends SVGDrawer
     plot.y = start_line.y
     plot.width = start_line.width + opt.width + end_line.width
     plot.height = Math.max(start_line.height, opt.height, end_line.height)
+    console.log JSON.parse JSON.stringify(plot)
     @draw(plot)
+    console.log plot
+
     @setViewport(plot)
 
   plot : (json, option) ->
@@ -146,16 +168,18 @@ class NEZDrawer extends SVGDrawer
         ret.x = option.x
         ret.y = option.y
         ret.value = []
+        opt = JSON.parse(JSON.stringify(option))
         for v in json.value
-          p = @plot(v, option)
+          p = @plot(v, opt)
+          opt.x += p.width + sequence_width
           ret.width += p.width + sequence_width
           ret.height = p.height if ret.height < p.height
           ret.value.push p
         x = 0
         path = []
         for v in ret.value
-          v.x += x
-          x += v.width + sequence_width
+          # v.x += x
+          # x += v.width + sequence_width
           path.push
             shape: "path"
             x: v.x + v.width
@@ -168,7 +192,6 @@ class NEZDrawer extends SVGDrawer
       when "Choice"
         choice_width = 20
         choice_height = 10
-        console.log json
         ret = {shape: "List", width: 0, height: -choice_height}
         ret.x = option.x
         ret.y = option.y
@@ -201,6 +224,42 @@ class NEZDrawer extends SVGDrawer
           path.push right
         ret.value.push.apply(ret.value, path)
         ret
+      when "Option"
+        option_width = 10
+        option_height = 10
+        ret = {shape: "List", width: 0, height: -option_height}
+        ret.x = option.x
+        ret.y = option.y
+        ret.value = []
+        p = @plot(json.value[0], option)
+        ret.width = p.width + option_width * 2
+        ret.height = p.height + option_height * 2
+        p.moveX = option_width
+        p.moveY = 0
+        ret.value.push p
+        path =
+          shape: "path"
+          through: true
+          x: ret.x
+          y: ret.y
+          xx: ret.x + ret.width
+          yy: ret.y
+          height: -ret.height / 2
+        left =
+          shape: "path"
+          x: ret.x
+          y : ret.y
+          xx: ret.x + option_width
+          yy : ret.y
+        right =
+          shape: "path"
+          x: left.xx + p.width
+          y : ret.y
+          xx: left.xx + p.width + option_width
+          yy : ret.y
+        ret.value.push path, left, right
+        ret
+
 
   NonTerminal : (name, option) ->
     charSize = @getCharSize()
@@ -228,9 +287,13 @@ class NEZDrawer extends SVGDrawer
         for p in plot.value
           if plot.moveX?
             p.x += plot.moveX
+            p.moveX = 0 unless p.moveX?
+            p.moveX += plot.moveX if p.shape is "List"
             p.xx += plot.moveX if p.xx?
           if plot.moveY?
             p.y += plot.moveY
+            p.moveY = 0 unless p.moveY?
+            p.moveY += plot.moveY if p.shape is "List"
             p.yy += plot.moveY if p.yy?
           opt = @draw(p)
           # option.width += opt.width

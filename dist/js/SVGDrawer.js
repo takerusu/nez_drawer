@@ -94,11 +94,29 @@ SVGDrawer = (function() {
   };
 
   SVGDrawer.prototype.drawPath = function(a, b) {
-    var b1, b2, end, option, p1, p2, p3, p4, rlx, rly, route, start, xl, yl;
+    var b1, b2, b3, b4, end, option, p1, p2, p3, p4, p5, p6, paddingY, rlx, rly, route, start, width, xl, yl;
     if (b == null) {
       option = a;
       a = [option.x, option.y];
       b = [option.xx, option.yy];
+      if (option.through) {
+        paddingY = option.height > 0 ? this.padding : -this.padding;
+        start = new Point(a);
+        end = new Point(b);
+        width = end.x - start.x;
+        p1 = new Point(start.x + this.padding, start.y - paddingY);
+        b1 = new Point(start.x + this.padding, start.y);
+        p2 = new Point(p1.x, start.y - option.height + paddingY);
+        p3 = new Point(p2.x + this.padding, p2.y - paddingY);
+        b2 = new Point(p2.x, p3.y);
+        p4 = new Point(start.x + width - this.padding * 2, p3.y);
+        p5 = new Point(p4.x + this.padding, p4.y + paddingY);
+        b3 = new Point(p5.x, p4.y);
+        p6 = new Point(p5.x, p4.y + option.height - paddingY);
+        b4 = new Point(p5.x, p6.y + paddingY);
+        route = [start, "Q", b1, p1, "L", p2, "Q", b2, p3, "L", p4, "Q", b3, p5, "L", p6, "Q", b4, end].join(" ");
+        return this.makePathObj(route);
+      }
     }
     start = new Point(a);
     end = new Point(b);
@@ -148,6 +166,7 @@ NEZDrawer = (function(superClass) {
 
   NEZDrawer.prototype.show = function(json) {
     var end_line, opt, option, plot, start_line;
+    console.log(json.value[0].value[1]);
     start_line = {
       shape: "path",
       width: 6,
@@ -162,7 +181,6 @@ NEZDrawer = (function(superClass) {
       y: start_line.y
     };
     opt = this.plot(json, option);
-    console.log(opt);
     end_line = {
       shape: "path",
       width: 6,
@@ -179,12 +197,14 @@ NEZDrawer = (function(superClass) {
     plot.y = start_line.y;
     plot.width = start_line.width + opt.width + end_line.width;
     plot.height = Math.max(start_line.height, opt.height, end_line.height);
+    console.log(JSON.parse(JSON.stringify(plot)));
     this.draw(plot);
+    console.log(plot);
     return this.setViewport(plot);
   };
 
   NEZDrawer.prototype.plot = function(json, option) {
-    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, m, name, p, path, production, ref, ref1, ref2, ref3, ret, right, sequence_width, target, v, x, y;
+    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, m, name, opt, option_height, option_width, p, path, production, ref, ref1, ref2, ref3, ret, right, sequence_width, target, v, x, y;
     switch (json.tag) {
       case "List":
         production = json.value[0];
@@ -207,10 +227,12 @@ NEZDrawer = (function(superClass) {
         ret.x = option.x;
         ret.y = option.y;
         ret.value = [];
+        opt = JSON.parse(JSON.stringify(option));
         ref = json.value;
         for (i = 0, len = ref.length; i < len; i++) {
           v = ref[i];
-          p = this.plot(v, option);
+          p = this.plot(v, opt);
+          opt.x += p.width + sequence_width;
           ret.width += p.width + sequence_width;
           if (ret.height < p.height) {
             ret.height = p.height;
@@ -222,8 +244,6 @@ NEZDrawer = (function(superClass) {
         ref1 = ret.value;
         for (j = 0, len1 = ref1.length; j < len1; j++) {
           v = ref1[j];
-          v.x += x;
-          x += v.width + sequence_width;
           path.push({
             shape: "path",
             x: v.x + v.width,
@@ -238,7 +258,6 @@ NEZDrawer = (function(superClass) {
       case "Choice":
         choice_width = 20;
         choice_height = 10;
-        console.log(json);
         ret = {
           shape: "List",
           width: 0,
@@ -285,6 +304,48 @@ NEZDrawer = (function(superClass) {
         }
         ret.value.push.apply(ret.value, path);
         return ret;
+      case "Option":
+        option_width = 10;
+        option_height = 10;
+        ret = {
+          shape: "List",
+          width: 0,
+          height: -option_height
+        };
+        ret.x = option.x;
+        ret.y = option.y;
+        ret.value = [];
+        p = this.plot(json.value[0], option);
+        ret.width = p.width + option_width * 2;
+        ret.height = p.height + option_height * 2;
+        p.moveX = option_width;
+        p.moveY = 0;
+        ret.value.push(p);
+        path = {
+          shape: "path",
+          through: true,
+          x: ret.x,
+          y: ret.y,
+          xx: ret.x + ret.width,
+          yy: ret.y,
+          height: -ret.height / 2
+        };
+        left = {
+          shape: "path",
+          x: ret.x,
+          y: ret.y,
+          xx: ret.x + option_width,
+          yy: ret.y
+        };
+        right = {
+          shape: "path",
+          x: left.xx + p.width,
+          y: ret.y,
+          xx: left.xx + p.width + option_width,
+          yy: ret.y
+        };
+        ret.value.push(path, left, right);
+        return ret;
     }
   };
 
@@ -323,12 +384,24 @@ NEZDrawer = (function(superClass) {
           p = ref[i];
           if (plot.moveX != null) {
             p.x += plot.moveX;
+            if (p.moveX == null) {
+              p.moveX = 0;
+            }
+            if (p.shape === "List") {
+              p.moveX += plot.moveX;
+            }
             if (p.xx != null) {
               p.xx += plot.moveX;
             }
           }
           if (plot.moveY != null) {
             p.y += plot.moveY;
+            if (p.moveY == null) {
+              p.moveY = 0;
+            }
+            if (p.shape === "List") {
+              p.moveY += plot.moveY;
+            }
             if (p.yy != null) {
               p.yy += plot.moveY;
             }
