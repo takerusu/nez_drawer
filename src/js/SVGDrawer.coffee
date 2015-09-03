@@ -164,8 +164,6 @@ class NEZDrawer extends SVGDrawer
             yy: ret.y
         path.pop()
         ret.value.push.apply(ret.value, path)
-        ret.x = 0
-        ret.y = 0
         ret
       when "Choice"
         choice_width = 20
@@ -184,31 +182,24 @@ class NEZDrawer extends SVGDrawer
         y = ret.y - ret.height / 2
         path = []
         for v in ret.value
-          v.x = ret.width / 2 - v.width / 2
-          v.y = y + v.height / 2
+          v.moveX = ret.width / 2 - v.width / 2
+          v.moveY = y + v.height / 2
           y = y + v.height + choice_height
-          leftxx = v.x
-          rightx = v.x + v.width
-          if v.shape is "List"
-            leftxx += v.value[0].x
-            rightx += v.value[0].x
           left =
             shape: "path"
             x: ret.x
             y: ret.y
-            xx: leftxx
-            yy: v.y
+            xx: ret.x + v.moveX
+            yy: ret.y + v.moveY
           right =
             shape: "path"
-            x: rightx
-            y: v.y
+            x: ret.x + v.moveX + v.width
+            y: ret.y + v.moveY
             xx: ret.x + ret.width
             yy: ret.y
           path.push left
           path.push right
         ret.value.push.apply(ret.value, path)
-        ret.x = 0
-        ret.y = 0
         ret
 
   NonTerminal : (name, option) ->
@@ -227,16 +218,20 @@ class NEZDrawer extends SVGDrawer
     }
 
   draw : (plot) ->
+    plot.x += plot.moveX if plot.moveX?
+    plot.y += plot.moveY if plot.moveY?
     switch plot.shape
       when "List"
         option = {}
         option.value = []
         option.shape = "List"
         for p in plot.value
-          p.x += plot.x
-          p.y += plot.y
-          p.xx += plot.x if p.xx?
-          p.yy += plot.y if p.yy?
+          if plot.moveX?
+            p.x += plot.moveX
+            p.xx += plot.moveX if p.xx?
+          if plot.moveY?
+            p.y += plot.moveY
+            p.yy += plot.moveY if p.yy?
           opt = @draw(p)
           # option.width += opt.width
           # option.height = opt.height if option.height < opt.height

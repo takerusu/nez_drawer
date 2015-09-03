@@ -184,7 +184,7 @@ NEZDrawer = (function(superClass) {
   };
 
   NEZDrawer.prototype.plot = function(json, option) {
-    var choice_height, choice_width, i, j, k, left, leftxx, len, len1, len2, len3, m, name, p, path, production, ref, ref1, ref2, ref3, ret, right, rightx, sequence_width, target, v, x, y;
+    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, m, name, p, path, production, ref, ref1, ref2, ref3, ret, right, sequence_width, target, v, x, y;
     switch (json.tag) {
       case "List":
         production = json.value[0];
@@ -234,8 +234,6 @@ NEZDrawer = (function(superClass) {
         }
         path.pop();
         ret.value.push.apply(ret.value, path);
-        ret.x = 0;
-        ret.y = 0;
         return ret;
       case "Choice":
         choice_width = 20;
@@ -265,26 +263,20 @@ NEZDrawer = (function(superClass) {
         ref3 = ret.value;
         for (m = 0, len3 = ref3.length; m < len3; m++) {
           v = ref3[m];
-          v.x = ret.width / 2 - v.width / 2;
-          v.y = y + v.height / 2;
+          v.moveX = ret.width / 2 - v.width / 2;
+          v.moveY = y + v.height / 2;
           y = y + v.height + choice_height;
-          leftxx = v.x;
-          rightx = v.x + v.width;
-          if (v.shape === "List") {
-            leftxx += v.value[0].x;
-            rightx += v.value[0].x;
-          }
           left = {
             shape: "path",
             x: ret.x,
             y: ret.y,
-            xx: leftxx,
-            yy: v.y
+            xx: ret.x + v.moveX,
+            yy: ret.y + v.moveY
           };
           right = {
             shape: "path",
-            x: rightx,
-            y: v.y,
+            x: ret.x + v.moveX + v.width,
+            y: ret.y + v.moveY,
             xx: ret.x + ret.width,
             yy: ret.y
           };
@@ -292,8 +284,6 @@ NEZDrawer = (function(superClass) {
           path.push(right);
         }
         ret.value.push.apply(ret.value, path);
-        ret.x = 0;
-        ret.y = 0;
         return ret;
     }
   };
@@ -317,6 +307,12 @@ NEZDrawer = (function(superClass) {
 
   NEZDrawer.prototype.draw = function(plot) {
     var i, len, opt, option, p, ref;
+    if (plot.moveX != null) {
+      plot.x += plot.moveX;
+    }
+    if (plot.moveY != null) {
+      plot.y += plot.moveY;
+    }
     switch (plot.shape) {
       case "List":
         option = {};
@@ -325,13 +321,17 @@ NEZDrawer = (function(superClass) {
         ref = plot.value;
         for (i = 0, len = ref.length; i < len; i++) {
           p = ref[i];
-          p.x += plot.x;
-          p.y += plot.y;
-          if (p.xx != null) {
-            p.xx += plot.x;
+          if (plot.moveX != null) {
+            p.x += plot.moveX;
+            if (p.xx != null) {
+              p.xx += plot.moveX;
+            }
           }
-          if (p.yy != null) {
-            p.yy += plot.y;
+          if (plot.moveY != null) {
+            p.y += plot.moveY;
+            if (p.yy != null) {
+              p.yy += plot.moveY;
+            }
           }
           opt = this.draw(p);
         }
