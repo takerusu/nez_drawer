@@ -413,7 +413,7 @@ NEZDrawer = (function(superClass) {
     w = charSize.width * l + this.padding * 2;
     h = charSize.height + this.padding * 2;
     return {
-      shape: "NonTerminal",
+      shape: "rect",
       text: name,
       round: true,
       x: option.x,
@@ -468,8 +468,8 @@ NEZDrawer = (function(superClass) {
         return option;
       case "path":
         return this.drawPath(plot);
-      case "NonTerminal":
-        return this.drawNonterminal(plot);
+      case "rect":
+        return this.drawRectWithText(plot);
     }
   };
 
@@ -516,15 +516,19 @@ NEZDrawer = (function(superClass) {
     }
   };
 
-  NEZDrawer.prototype.drawNonterminal = function(option) {
-    var point;
+  NEZDrawer.prototype.drawRectWithText = function(option) {
+    var point, r;
     point = new Point(option.x, option.y - option.height / 2);
     this.drawTextPadding(option.text, option);
+    r = 0;
+    if (option.round) {
+      r = this.rlength;
+    }
     return this.drawRect({
       point: point,
       width: option.width,
       height: option.height,
-      r: this.rlength
+      r: r
     });
   };
 

@@ -315,7 +315,7 @@ class NEZDrawer extends SVGDrawer
     w = charSize.width * l + @padding * 2
     h = charSize.height + @padding * 2
     return {
-      shape: "NonTerminal"
+      shape: "rect"
       text: name
       round: true
       x: option.x
@@ -350,8 +350,8 @@ class NEZDrawer extends SVGDrawer
         option
       when "path"
         @drawPath(plot)
-      when "NonTerminal"
-        @drawNonterminal(plot)
+      when "rect"
+        @drawRectWithText(plot)
 
   drawText : (text, option) ->
     t = document.createElementNS("http://www.w3.org/2000/svg", "text")
@@ -386,9 +386,11 @@ class NEZDrawer extends SVGDrawer
       @charSize.width = box.width / (text.innerHTML.length - 1)
       @charSize
 
-  drawNonterminal : (option) ->
+  drawRectWithText : (option) ->
     point = new Point(option.x, option.y - option.height / 2)
     @drawTextPadding(option.text, option)
-    @drawRect(point: point, width: option.width, height: option.height, r:@rlength)
+    r = 0
+    r = @rlength if option.round
+    @drawRect(point: point, width: option.width, height: option.height, r: r)
 
   drawChoice : () ->
