@@ -163,6 +163,8 @@ class NEZDrawer extends SVGDrawer
     switch json.tag
       when "Character"
         @Textrect("Character", json.value, option)
+      when "String"
+        @Textrect("String", json.value, option)
       when "Class"
         str = ""
         for v in json.value
@@ -320,6 +322,7 @@ class NEZDrawer extends SVGDrawer
   Textrect : (type, text, option) ->
     charSize = @getCharSize()
     text = "'#{text}'" if type is "Character"
+    text = "\"#{text}\"" if type is "String"
     text = "[#{text}]" if type is "Class"
     l = text.length
     w = charSize.width * l + @padding * 2

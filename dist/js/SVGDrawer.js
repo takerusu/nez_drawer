@@ -219,6 +219,8 @@ NEZDrawer = (function(superClass) {
     switch (json.tag) {
       case "Character":
         return this.Textrect("Character", json.value, option);
+      case "String":
+        return this.Textrect("String", json.value, option);
       case "Class":
         str = "";
         ref = json.value;
@@ -423,6 +425,9 @@ NEZDrawer = (function(superClass) {
     charSize = this.getCharSize();
     if (type === "Character") {
       text = "'" + text + "'";
+    }
+    if (type === "String") {
+      text = "\"" + text + "\"";
     }
     if (type === "Class") {
       text = "[" + text + "]";
