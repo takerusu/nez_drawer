@@ -161,10 +161,8 @@ class NEZDrawer extends SVGDrawer
 
   plot : (json, option) ->
     switch json.tag
-      when "Character"
-        @Textrect("Character", json.value, option)
-      when "String"
-        @Textrect("String", json.value, option)
+      when "Any", "Character", "String", "NonTerminal"
+        @Textrect(json.tag, json.value, option)
       when "Class"
         str = ""
         for v in json.value
@@ -173,8 +171,6 @@ class NEZDrawer extends SVGDrawer
           else if v.tag is "List"
             str += v.value[0].value + "-" + v.value[1].value
         @Textrect("Class", str, option)
-      when "NonTerminal"
-        @Textrect("NonTerminal", json.value, option)
       when "Sequence"
         sequence_width = 6
         ret = {shape: "List", width: -sequence_width, height: 0}

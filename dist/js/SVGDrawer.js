@@ -217,10 +217,11 @@ NEZDrawer = (function(superClass) {
   NEZDrawer.prototype.plot = function(json, option) {
     var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, len4, loops, m, n, opt, option_height, option_width, p, path, ref, ref1, ref2, ref3, ref4, repetition_height, repetition_width, ret, right, sequence_width, str, v, x, y;
     switch (json.tag) {
+      case "Any":
       case "Character":
-        return this.Textrect("Character", json.value, option);
       case "String":
-        return this.Textrect("String", json.value, option);
+      case "NonTerminal":
+        return this.Textrect(json.tag, json.value, option);
       case "Class":
         str = "";
         ref = json.value;
@@ -233,8 +234,6 @@ NEZDrawer = (function(superClass) {
           }
         }
         return this.Textrect("Class", str, option);
-      case "NonTerminal":
-        return this.Textrect("NonTerminal", json.value, option);
       case "Sequence":
         sequence_width = 6;
         ret = {
