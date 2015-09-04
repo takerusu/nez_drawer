@@ -169,8 +169,15 @@ NEZDrawer = (function(superClass) {
   }
 
   NEZDrawer.prototype.show = function(json) {
-    var end_line, opt, option, plot, start_line;
+    var end_line, name, opt, option, plot, production, start_line, target;
     console.log(json.value[0].value[1]);
+    production = json.value[0];
+    if (production.value.length < 2) {
+      return;
+    }
+    target = production.value[production.value.length - 1];
+    name = production.value[production.value.length - 2];
+    this.name = name.value;
     start_line = {
       shape: "path",
       width: 6,
@@ -184,7 +191,7 @@ NEZDrawer = (function(superClass) {
       x: start_line.x + start_line.width,
       y: start_line.y
     };
-    opt = this.plot(json, option);
+    opt = this.plot(target, option);
     end_line = {
       shape: "path",
       width: 6,
@@ -208,19 +215,21 @@ NEZDrawer = (function(superClass) {
   };
 
   NEZDrawer.prototype.plot = function(json, option) {
-    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, loops, m, name, opt, option_height, option_width, p, path, production, ref, ref1, ref2, ref3, repetition_height, repetition_width, ret, right, sequence_width, target, v, x, y;
+    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, len4, loops, m, n, opt, option_height, option_width, p, path, ref, ref1, ref2, ref3, ref4, repetition_height, repetition_width, results, ret, right, sequence_width, v, x, y;
     switch (json.tag) {
       case "List":
-        production = json.value[0];
-        if (production.value.length < 2) {
-          return;
+        ref = json.value;
+        results = [];
+        for (i = 0, len = ref.length; i < len; i++) {
+          v = ref[i];
+          results.push(this.plot(v, option));
         }
-        target = production.value[production.value.length - 1];
-        name = production.value[production.value.length - 2];
-        this.name = name.value;
-        return this.plot(target, option);
+        return results;
+        break;
+      case "Character":
+        return this.Textrect("Character", json.value, option);
       case "NonTerminal":
-        return this.NonTerminal(json.value, option);
+        return this.Textrect("NonTerminal", json.value, option);
       case "Sequence":
         sequence_width = 6;
         ret = {
@@ -232,9 +241,9 @@ NEZDrawer = (function(superClass) {
         ret.y = option.y;
         ret.value = [];
         opt = JSON.parse(JSON.stringify(option));
-        ref = json.value;
-        for (i = 0, len = ref.length; i < len; i++) {
-          v = ref[i];
+        ref1 = json.value;
+        for (j = 0, len1 = ref1.length; j < len1; j++) {
+          v = ref1[j];
           p = this.plot(v, opt);
           opt.x += p.width + sequence_width;
           ret.width += p.width + sequence_width;
@@ -245,9 +254,9 @@ NEZDrawer = (function(superClass) {
         }
         x = 0;
         path = [];
-        ref1 = ret.value;
-        for (j = 0, len1 = ref1.length; j < len1; j++) {
-          v = ref1[j];
+        ref2 = ret.value;
+        for (k = 0, len2 = ref2.length; k < len2; k++) {
+          v = ref2[k];
           path.push({
             shape: "path",
             x: v.x + v.width,
@@ -270,9 +279,9 @@ NEZDrawer = (function(superClass) {
         ret.x = option.x;
         ret.y = option.y;
         ret.value = [];
-        ref2 = json.value;
-        for (k = 0, len2 = ref2.length; k < len2; k++) {
-          v = ref2[k];
+        ref3 = json.value;
+        for (m = 0, len3 = ref3.length; m < len3; m++) {
+          v = ref3[m];
           p = this.plot(v, option);
           if (ret.width < p.width) {
             ret.width = p.width;
@@ -283,9 +292,9 @@ NEZDrawer = (function(superClass) {
         ret.width += 2 * choice_width;
         y = ret.y - ret.height / 2;
         path = [];
-        ref3 = ret.value;
-        for (m = 0, len3 = ref3.length; m < len3; m++) {
-          v = ref3[m];
+        ref4 = ret.value;
+        for (n = 0, len4 = ref4.length; n < len4; n++) {
+          v = ref4[n];
           v.moveX = ret.width / 2 - v.width / 2;
           v.moveY = y + v.height / 2;
           y = y + v.height + choice_height;
@@ -406,16 +415,20 @@ NEZDrawer = (function(superClass) {
     }
   };
 
-  NEZDrawer.prototype.NonTerminal = function(name, option) {
-    var charSize, h, l, w;
+  NEZDrawer.prototype.Textrect = function(type, text, option) {
+    var charSize, h, l, round, w;
     charSize = this.getCharSize();
-    l = name.length;
+    if (type === "Character") {
+      text = "'" + text + "'";
+    }
+    l = text.length;
     w = charSize.width * l + this.padding * 2;
     h = charSize.height + this.padding * 2;
+    round = type === "NonTerminal" ? true : false;
     return {
       shape: "rect",
-      text: name,
-      round: true,
+      text: text,
+      round: round,
       x: option.x,
       y: option.y,
       width: w,

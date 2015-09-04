@@ -1,5 +1,5 @@
 window.onload = function() {
-  var drawer, input, input0, input1, input2, input3, input4, input5, inputall, o, parser;
+  var drawer, input, input0, input1, input2, input3, input4, input5, input6, inputall, o, parser;
   input = "Number = { '-'? INT (FRAC EXP? #Float / '' #Integer) } S*";
   input0 = "A = aaa";
   input1 = "A = AAAAAA / AB / AC";
@@ -7,9 +7,10 @@ window.onload = function() {
   input3 = "A = AAAAAA (AB AC) A";
   input4 = "A = A?";
   input5 = "A = A* / B+";
+  input6 = "A = 'char'";
   inputall = "A = AA (A / AB)? BB / B";
   parser = new Parser();
-  o = parser.parse(input5);
+  o = parser.parse(input6);
   drawer = new NEZDrawer($('.svg2'));
   drawer.getCharSize();
   return drawer.show(o);

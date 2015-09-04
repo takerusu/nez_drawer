@@ -121,6 +121,11 @@ class SVGDrawer
 class NEZDrawer extends SVGDrawer
   show : (json) ->
     console.log json.value[0].value[1]
+    production = json.value[0]
+    return if production.value.length < 2
+    target = production.value[production.value.length - 1]
+    name = production.value[production.value.length - 2]
+    @name = name.value
     start_line =
       shape: "path"
       width: 6
@@ -132,7 +137,7 @@ class NEZDrawer extends SVGDrawer
     option =
       x: start_line.x + start_line.width
       y: start_line.y
-    opt = @plot(json, option)
+    opt = @plot(target, option)
     end_line =
       shape: "path"
       width: 6
@@ -157,14 +162,12 @@ class NEZDrawer extends SVGDrawer
   plot : (json, option) ->
     switch json.tag
       when "List"
-        production = json.value[0]
-        return if production.value.length < 2
-        target = production.value[production.value.length - 1]
-        name = production.value[production.value.length - 2]
-        @name = name.value
-        @plot(target, option)
+        for v in json.value
+          @plot(v, option)
+      when "Character"
+        @Textrect("Character", json.value, option)
       when "NonTerminal"
-        @NonTerminal(json.value, option)
+        @Textrect("NonTerminal", json.value, option)
       when "Sequence"
         sequence_width = 6
         ret = {shape: "List", width: -sequence_width, height: 0}
@@ -309,15 +312,17 @@ class NEZDrawer extends SVGDrawer
         ret
 
 
-  NonTerminal : (name, option) ->
+  Textrect : (type, text, option) ->
     charSize = @getCharSize()
-    l = name.length
+    text = "'#{text}'" if type is "Character"
+    l = text.length
     w = charSize.width * l + @padding * 2
     h = charSize.height + @padding * 2
+    round = if type is "NonTerminal" then true else false
     return {
       shape: "rect"
-      text: name
-      round: true
+      text: text
+      round: round
       x: option.x
       y: option.y
       width: w
