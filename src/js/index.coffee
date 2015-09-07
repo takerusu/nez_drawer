@@ -14,11 +14,18 @@ window.onload = () ->
   input10 = "A = &('a' / 'null') ABC / !AB BC"
   inputall = "A = AA (A / AB)? BB / B"
   parser = new Parser()
-  o = parser.parse input10
+  o = parser.parse input9
 
   drawer = new NEZDrawer($('.svg2'))
   drawer.getCharSize()
   drawer.show(o)
+
+  $("#input").on 'keyup', (e) ->
+    input = "Rule = "
+    input += $("#input").val()
+    o = parser.parse input
+    drawer.clear()
+    drawer.show o
 
   # drawer.drawNonterminal([100, 200], [500, 200])
   # drawer.drawPath([100, 100], [500, 300])

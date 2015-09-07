@@ -51,6 +51,15 @@ SVGDrawer = (function() {
     target[0].appendChild(this.svg);
   }
 
+  SVGDrawer.prototype.clear = function() {
+    var results;
+    results = [];
+    while (this.svg.firstChild != null) {
+      results.push(this.svg.removeChild(this.svg.firstChild));
+    }
+    return results;
+  };
+
   SVGDrawer.prototype.setViewport = function(option) {
     var x, xx, y, yy;
     x = option.x;
@@ -77,13 +86,16 @@ SVGDrawer = (function() {
   };
 
   SVGDrawer.prototype.drawRect = function(arg) {
-    var fill, height, opacity, point, r, rect, stroke, width;
-    point = arg.point, width = arg.width, height = arg.height, r = arg.r, fill = arg.fill, opacity = arg.opacity, stroke = arg.stroke;
+    var fill, height, opacity, point, r, rect, stroke, stroke_dasharray, width;
+    point = arg.point, width = arg.width, height = arg.height, r = arg.r, fill = arg.fill, opacity = arg.opacity, stroke = arg.stroke, stroke_dasharray = arg.stroke_dasharray;
     rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.style.stroke = stroke != null ? stroke : "black";
     rect.style.fill = fill != null ? fill : "none";
     if (opacity != null) {
       rect.setAttribute("fill-opacity", opacity);
+    }
+    if (stroke_dasharray != null) {
+      rect.setAttribute("stroke-dasharray", stroke_dasharray);
     }
     rect.setAttribute("x", point.x);
     rect.setAttribute("y", point.y);
@@ -236,7 +248,7 @@ NEZDrawer = (function(superClass) {
           x: option.x,
           y: option.y,
           width: p.width + padding * 2,
-          height: p.height + padding * 2,
+          height: p.height + padding * 4,
           value: [p]
         };
         rect = {
@@ -247,14 +259,14 @@ NEZDrawer = (function(superClass) {
           y: option.y,
           width: ret.width,
           height: ret.height,
-          fill: json.tag === "And" ? "#8AF" : "#F88",
-          stroke: "none",
+          stroke: json.tag === "And" ? "#8AF" : "#F88",
+          stroke_dasharray: "3,3",
           opacity: "0.2"
         };
         text = {
           shape: "text",
-          x: option.x,
-          y: option.y - ret.height / 2,
+          x: option.x + padding,
+          y: option.y - ret.height / 2 + padding,
           size: 4,
           text: json.tag
         };

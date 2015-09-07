@@ -34,6 +34,10 @@ class SVGDrawer
     @svg.setAttribute("preserveAspectRatio", "xMinYMin")
     target[0].appendChild(@svg)
 
+  clear: () ->
+    while @svg.firstChild?
+      @svg.removeChild @svg.firstChild
+
   setViewport: (option) ->
     x = option.x
     y = option.y - option.height / 2
@@ -54,11 +58,12 @@ class SVGDrawer
       path.setAttribute("d", "M" + a)
     @svg.appendChild(path)
 
-  drawRect: ({point, width, height, r, fill, opacity, stroke}) ->
+  drawRect: ({point, width, height, r, fill, opacity, stroke, stroke_dasharray}) ->
     rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
     rect.style.stroke = if stroke? then stroke else "black"
     rect.style.fill = if fill? then fill else "none"
     rect.setAttribute("fill-opacity", opacity) if opacity?
+    rect.setAttribute("stroke-dasharray", stroke_dasharray) if stroke_dasharray?
     rect.setAttribute("x", point.x)
     rect.setAttribute("y", point.y)
     rect.setAttribute("width", width)
@@ -174,7 +179,7 @@ class NEZDrawer extends SVGDrawer
           x: option.x
           y: option.y
           width: p.width + padding * 2
-          height: p.height + padding * 2
+          height: p.height + padding * 4
           value : [p]
         rect =
           shape: "rect"
@@ -184,13 +189,13 @@ class NEZDrawer extends SVGDrawer
           y: option.y
           width: ret.width
           height: ret.height
-          fill: if json.tag is "And" then "#8AF" else "#F88"
-          stroke: "none"
+          stroke: if json.tag is "And" then "#8AF" else "#F88"
+          stroke_dasharray: "3,3"
           opacity: "0.2"
         text =
           shape: "text"
-          x: option.x
-          y: option.y - ret.height / 2
+          x: option.x + padding
+          y: option.y - ret.height / 2 + padding
           size: 4
           text: json.tag
         ret.value.push rect, text
