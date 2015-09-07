@@ -73,11 +73,12 @@ class SVGDrawer
       rect.setAttribute("ry", r)
     @svg.appendChild(rect)
 
-  drawPath: (a, b) ->
+  drawPath: (a, b, xd) ->
     unless b?
       option = a
       a = [option.x, option.y]
       b = [option.xx, option.yy]
+      xd = option.xd
       if option.through or option.loop
         paddingY = if option.height > 0 then @padding else -@padding
         start = new Point(a)
@@ -108,19 +109,20 @@ class SVGDrawer
       @makePathObj(start, end)
     else
       xl = end.x - start.x
+      xd =  if xd? then xd - start.x else xl / 2
       yl = end.y - start.y
       rlx = @rlength
-      rlx = Math.abs(xl / 2) if Math.abs(xl / 2) < @rlength
+      rlx = Math.abs(xd) if Math.abs(xl / 2) < @rlength
       rlx = Math.abs(yl / 2) if Math.abs(yl / 2) < @rlength
       rly = rlx
       rlx = -rlx unless start.ltor end
       rly = -rly unless start.utod end
-      p1 = new Point(start.x + xl / 2 - rlx, start.y)
-      p2 = new Point(start.x + xl / 2, start.y + rly)
-      b1 = new Point(start.x + xl / 2, start.y)
-      p3 = new Point(start.x + xl / 2, end.y - rly)
-      p4 = new Point(start.x + xl / 2 + rlx, end.y)
-      b2 = new Point(start.x + xl / 2, end.y)
+      p1 = new Point(start.x + xd - rlx, start.y)
+      p2 = new Point(start.x + xd, start.y + rly)
+      b1 = new Point(start.x + xd, start.y)
+      p3 = new Point(start.x + xd, end.y - rly)
+      p4 = new Point(start.x + xd + rlx, end.y)
+      b2 = new Point(start.x + xd, end.y)
       route = [start, "L", p1, "Q", b1, p2, "L", p3, "Q", b2, p4, "L", end].join(" ")
       @makePathObj(route)
 
@@ -255,9 +257,11 @@ class NEZDrawer extends SVGDrawer
           ret.width = p.width if ret.width < p.width
           ret.height += p.height + choice_height
           ret.value.push p
+        max_width = ret.width
         ret.width += 2 * choice_width
         y = ret.y - ret.height / 2
         path = []
+        xd = (ret.width / 2 - max_width / 2) / 2
         for v in ret.value
           v.moveX = ret.width / 2 - v.width / 2
           v.moveY = y + v.height / 2
@@ -266,12 +270,14 @@ class NEZDrawer extends SVGDrawer
             shape: "path"
             x: ret.x
             y: ret.y
+            xd: ret.x + xd
             xx: ret.x + v.moveX
             yy: ret.y + v.moveY
           right =
             shape: "path"
             x: ret.x + v.moveX + v.width
             y: ret.y + v.moveY
+            xd: ret.x + ret.width - xd
             xx: ret.x + ret.width
             yy: ret.y
           path.push left
@@ -411,6 +417,7 @@ class NEZDrawer extends SVGDrawer
             p.x += plot.moveX
             p.moveX = 0 unless p.moveX?
             p.moveX += plot.moveX if p.shape is "List"
+            p.xd += plot.moveX if p.xd?
             p.xx += plot.moveX if p.xx?
           if plot.moveY?
             p.y += plot.moveY

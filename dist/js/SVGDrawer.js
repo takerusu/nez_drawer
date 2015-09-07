@@ -108,12 +108,13 @@ SVGDrawer = (function() {
     return this.svg.appendChild(rect);
   };
 
-  SVGDrawer.prototype.drawPath = function(a, b) {
+  SVGDrawer.prototype.drawPath = function(a, b, xd) {
     var b1, b2, b3, b4, end, option, p1, p2, p3, p4, p5, p6, paddingY, rlx, rly, route, start, width, xl, yl;
     if (b == null) {
       option = a;
       a = [option.x, option.y];
       b = [option.xx, option.yy];
+      xd = option.xd;
       if (option.through || option.loop) {
         paddingY = option.height > 0 ? this.padding : -this.padding;
         start = new Point(a);
@@ -146,10 +147,11 @@ SVGDrawer = (function() {
       return this.makePathObj(start, end);
     } else {
       xl = end.x - start.x;
+      xd = xd != null ? xd - start.x : xl / 2;
       yl = end.y - start.y;
       rlx = this.rlength;
       if (Math.abs(xl / 2) < this.rlength) {
-        rlx = Math.abs(xl / 2);
+        rlx = Math.abs(xd);
       }
       if (Math.abs(yl / 2) < this.rlength) {
         rlx = Math.abs(yl / 2);
@@ -161,12 +163,12 @@ SVGDrawer = (function() {
       if (!start.utod(end)) {
         rly = -rly;
       }
-      p1 = new Point(start.x + xl / 2 - rlx, start.y);
-      p2 = new Point(start.x + xl / 2, start.y + rly);
-      b1 = new Point(start.x + xl / 2, start.y);
-      p3 = new Point(start.x + xl / 2, end.y - rly);
-      p4 = new Point(start.x + xl / 2 + rlx, end.y);
-      b2 = new Point(start.x + xl / 2, end.y);
+      p1 = new Point(start.x + xd - rlx, start.y);
+      p2 = new Point(start.x + xd, start.y + rly);
+      b1 = new Point(start.x + xd, start.y);
+      p3 = new Point(start.x + xd, end.y - rly);
+      p4 = new Point(start.x + xd + rlx, end.y);
+      b2 = new Point(start.x + xd, end.y);
       route = [start, "L", p1, "Q", b1, p2, "L", p3, "Q", b2, p4, "L", end].join(" ");
       return this.makePathObj(route);
     }
@@ -230,7 +232,7 @@ NEZDrawer = (function(superClass) {
   };
 
   NEZDrawer.prototype.plot = function(json, option) {
-    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, len4, loops, m, n, opt, option_height, option_width, p, padding, path, rect, ref, ref1, ref2, ref3, ref4, repetition_height, repetition_width, ret, right, sequence_width, str, text, v, x, y;
+    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, len4, loops, m, max_width, n, opt, option_height, option_width, p, padding, path, rect, ref, ref1, ref2, ref3, ref4, repetition_height, repetition_width, ret, right, sequence_width, str, text, v, x, xd, y;
     switch (json.tag) {
       case "Any":
       case "Character":
@@ -345,9 +347,11 @@ NEZDrawer = (function(superClass) {
           ret.height += p.height + choice_height;
           ret.value.push(p);
         }
+        max_width = ret.width;
         ret.width += 2 * choice_width;
         y = ret.y - ret.height / 2;
         path = [];
+        xd = (ret.width / 2 - max_width / 2) / 2;
         ref4 = ret.value;
         for (n = 0, len4 = ref4.length; n < len4; n++) {
           v = ref4[n];
@@ -358,6 +362,7 @@ NEZDrawer = (function(superClass) {
             shape: "path",
             x: ret.x,
             y: ret.y,
+            xd: ret.x + xd,
             xx: ret.x + v.moveX,
             yy: ret.y + v.moveY
           };
@@ -365,6 +370,7 @@ NEZDrawer = (function(superClass) {
             shape: "path",
             x: ret.x + v.moveX + v.width,
             y: ret.y + v.moveY,
+            xd: ret.x + ret.width - xd,
             xx: ret.x + ret.width,
             yy: ret.y
           };
@@ -543,6 +549,9 @@ NEZDrawer = (function(superClass) {
             }
             if (p.shape === "List") {
               p.moveX += plot.moveX;
+            }
+            if (p.xd != null) {
+              p.xd += plot.moveX;
             }
             if (p.xx != null) {
               p.xx += plot.moveX;

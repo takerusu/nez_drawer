@@ -14,7 +14,7 @@ window.onload = function() {
   input10 = "A = &('a' / 'null') ABC / !AB BC";
   inputall = "A = AA (A / AB)? BB / B";
   parser = new Parser();
-  o = parser.parse(input9);
+  o = parser.parse(input1);
   drawer = new NEZDrawer($('.svg2'));
   drawer.getCharSize();
   drawer.show(o);
