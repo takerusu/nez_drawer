@@ -11,9 +11,10 @@ window.onload = () ->
   input7 = 'A = "str"'
   input8 = 'A = .'
   input9 = "A = [abcd-z0-9.!]"
+  input10 = "A = &('a' / 'null') ABC / !AB BC"
   inputall = "A = AA (A / AB)? BB / B"
   parser = new Parser()
-  o = parser.parse input8
+  o = parser.parse input10
 
   drawer = new NEZDrawer($('.svg2'))
   drawer.getCharSize()

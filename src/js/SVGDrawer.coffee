@@ -54,10 +54,11 @@ class SVGDrawer
       path.setAttribute("d", "M" + a)
     @svg.appendChild(path)
 
-  drawRect: ({point, width, height, r}) ->
+  drawRect: ({point, width, height, r, fill, opacity, stroke}) ->
     rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    rect.style.stroke = "black"
-    rect.style.fill = "none"
+    rect.style.stroke = if stroke? then stroke else "black"
+    rect.style.fill = if fill? then fill else "none"
+    rect.setAttribute("fill-opacity", opacity) if opacity?
     rect.setAttribute("x", point.x)
     rect.setAttribute("y", point.y)
     rect.setAttribute("width", width)
@@ -163,6 +164,45 @@ class NEZDrawer extends SVGDrawer
     switch json.tag
       when "Any", "Character", "String", "NonTerminal"
         @Textrect(json.tag, json.value, option)
+      when "And", "Not"
+        padding = 5
+        p = @plot(json.value[0], option)
+        p.moveX = padding
+        p.moveY = 0
+        ret =
+          shape: "List"
+          x: option.x
+          y: option.y
+          width: p.width + padding * 2
+          height: p.height + padding * 2
+          value : [p]
+        rect =
+          shape: "rect"
+          text: ""
+          round: @rlength
+          x: option.x
+          y: option.y
+          width: ret.width
+          height: ret.height
+          fill: if json.tag is "And" then "#8AF" else "#F88"
+          stroke: "none"
+          opacity: "0.2"
+        text =
+          shape: "text"
+          x: option.x
+          y: option.y - ret.height / 2
+          size: 4
+          text: json.tag
+        ret.value.push rect, text
+        ret.value.push @plotPath(
+          option.x, option.y,
+          option.x + padding, option.y
+        )
+        ret.value.push @plotPath(
+          option.x + ret.width - padding, option.y,
+          option.x + ret.width, option.y
+        )
+        ret
       when "Class"
         str = ""
         for v in json.value
@@ -314,12 +354,31 @@ class NEZDrawer extends SVGDrawer
         ret.value.push path if json.tag is "Repetition"
         ret
 
+  plotRect: () ->
+    return {
+      shape: "rect"
+      text: text
+      round: round
+      x: option.x
+      y: option.y
+      width: w
+      height: h
+    }
+
+  plotPath: (x, y, xx, yy) ->
+    shape: "path"
+    x: x
+    y: y
+    xx: xx
+    yy: yy
 
   Textrect : (type, text, option) ->
     charSize = @getCharSize()
     text = "'#{text}'" if type is "Character"
     text = "\"#{text}\"" if type is "String"
     text = "[#{text}]" if type is "Class"
+    # text = "&#{text}" if type is "And"
+    # text = "!#{text}" if type is "Not"
     l = text.length
     w = charSize.width * l + @padding * 2
     h = charSize.height + @padding * 2
@@ -362,13 +421,16 @@ class NEZDrawer extends SVGDrawer
         @drawPath(plot)
       when "rect"
         @drawRectWithText(plot)
+      when "text"
+        @drawText(plot.text, plot)
 
   drawText : (text, option) ->
     t = document.createElementNS("http://www.w3.org/2000/svg", "text")
     t.setAttribute("x", option.x)
     t.setAttribute("y", option.y)
     t.setAttribute("fill", "#222")
-    t.setAttribute("font-size", 12)
+    fontsize = if option.size? then option.size else 12
+    t.setAttribute("font-size", fontsize)
     t.setAttribute("font-family", "monospace")
     t.innerHTML = text
     @svg.appendChild(t)
@@ -401,6 +463,8 @@ class NEZDrawer extends SVGDrawer
     @drawTextPadding(option.text, option)
     r = 0
     r = @rlength if option.round
-    @drawRect(point: point, width: option.width, height: option.height, r: r)
+    option.point = point
+    option.r = r
+    @drawRect(option)
 
   drawChoice : () ->

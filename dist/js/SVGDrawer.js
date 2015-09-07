@@ -77,11 +77,14 @@ SVGDrawer = (function() {
   };
 
   SVGDrawer.prototype.drawRect = function(arg) {
-    var height, point, r, rect, width;
-    point = arg.point, width = arg.width, height = arg.height, r = arg.r;
+    var fill, height, opacity, point, r, rect, stroke, width;
+    point = arg.point, width = arg.width, height = arg.height, r = arg.r, fill = arg.fill, opacity = arg.opacity, stroke = arg.stroke;
     rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.style.stroke = "black";
-    rect.style.fill = "none";
+    rect.style.stroke = stroke != null ? stroke : "black";
+    rect.style.fill = fill != null ? fill : "none";
+    if (opacity != null) {
+      rect.setAttribute("fill-opacity", opacity);
+    }
     rect.setAttribute("x", point.x);
     rect.setAttribute("y", point.y);
     rect.setAttribute("width", width);
@@ -215,13 +218,50 @@ NEZDrawer = (function(superClass) {
   };
 
   NEZDrawer.prototype.plot = function(json, option) {
-    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, len4, loops, m, n, opt, option_height, option_width, p, path, ref, ref1, ref2, ref3, ref4, repetition_height, repetition_width, ret, right, sequence_width, str, v, x, y;
+    var choice_height, choice_width, i, j, k, left, len, len1, len2, len3, len4, loops, m, n, opt, option_height, option_width, p, padding, path, rect, ref, ref1, ref2, ref3, ref4, repetition_height, repetition_width, ret, right, sequence_width, str, text, v, x, y;
     switch (json.tag) {
       case "Any":
       case "Character":
       case "String":
       case "NonTerminal":
         return this.Textrect(json.tag, json.value, option);
+      case "And":
+      case "Not":
+        padding = 5;
+        p = this.plot(json.value[0], option);
+        p.moveX = padding;
+        p.moveY = 0;
+        ret = {
+          shape: "List",
+          x: option.x,
+          y: option.y,
+          width: p.width + padding * 2,
+          height: p.height + padding * 2,
+          value: [p]
+        };
+        rect = {
+          shape: "rect",
+          text: "",
+          round: this.rlength,
+          x: option.x,
+          y: option.y,
+          width: ret.width,
+          height: ret.height,
+          fill: json.tag === "And" ? "#8AF" : "#F88",
+          stroke: "none",
+          opacity: "0.2"
+        };
+        text = {
+          shape: "text",
+          x: option.x,
+          y: option.y - ret.height / 2,
+          size: 4,
+          text: json.tag
+        };
+        ret.value.push(rect, text);
+        ret.value.push(this.plotPath(option.x, option.y, option.x + padding, option.y));
+        ret.value.push(this.plotPath(option.x + ret.width - padding, option.y, option.x + ret.width, option.y));
+        return ret;
       case "Class":
         str = "";
         ref = json.value;
@@ -419,6 +459,28 @@ NEZDrawer = (function(superClass) {
     }
   };
 
+  NEZDrawer.prototype.plotRect = function() {
+    return {
+      shape: "rect",
+      text: text,
+      round: round,
+      x: option.x,
+      y: option.y,
+      width: w,
+      height: h
+    };
+  };
+
+  NEZDrawer.prototype.plotPath = function(x, y, xx, yy) {
+    return {
+      shape: "path",
+      x: x,
+      y: y,
+      xx: xx,
+      yy: yy
+    };
+  };
+
   NEZDrawer.prototype.Textrect = function(type, text, option) {
     var charSize, h, l, round, w;
     charSize = this.getCharSize();
@@ -493,16 +555,19 @@ NEZDrawer = (function(superClass) {
         return this.drawPath(plot);
       case "rect":
         return this.drawRectWithText(plot);
+      case "text":
+        return this.drawText(plot.text, plot);
     }
   };
 
   NEZDrawer.prototype.drawText = function(text, option) {
-    var t;
+    var fontsize, t;
     t = document.createElementNS("http://www.w3.org/2000/svg", "text");
     t.setAttribute("x", option.x);
     t.setAttribute("y", option.y);
     t.setAttribute("fill", "#222");
-    t.setAttribute("font-size", 12);
+    fontsize = option.size != null ? option.size : 12;
+    t.setAttribute("font-size", fontsize);
     t.setAttribute("font-family", "monospace");
     t.innerHTML = text;
     this.svg.appendChild(t);
@@ -547,12 +612,9 @@ NEZDrawer = (function(superClass) {
     if (option.round) {
       r = this.rlength;
     }
-    return this.drawRect({
-      point: point,
-      width: option.width,
-      height: option.height,
-      r: r
-    });
+    option.point = point;
+    option.r = r;
+    return this.drawRect(option);
   };
 
   NEZDrawer.prototype.drawChoice = function() {};
