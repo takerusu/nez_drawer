@@ -12,9 +12,10 @@ window.onload = () ->
   input8 = 'A = .'
   input9 = "A = [abcd-z0-9.!]"
   input10 = "A = &('a' / 'null') ABC / !AB BC"
+  input11 = "public Expression = Sequence ({@ (\"/\" @Sequence)+ #Choice })?"
   inputall = "A = AA (A / AB)? BB / B"
   parser = new Parser()
-  o = parser.parse input1
+  o = parser.parse inputall
 
   drawer = new NEZDrawer($('.svg2'))
   drawer.getCharSize()

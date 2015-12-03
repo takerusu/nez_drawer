@@ -34,12 +34,27 @@ Point = (function() {
 
 SVGDrawer = (function() {
   function SVGDrawer(target) {
+    var onDrag, onDragEnd, onDragStart, onWheel, rect;
     this.width = 600;
     this.height = 400;
     this.rlength = 3;
     this.boxx = 60;
     this.boxy = 30;
     this.padding = 3;
+    rect = target[0].getBoundingClientRect();
+    this.top = rect.top + window.pageYOffset;
+    this.left = rect.left + window.pageXOffset;
+    this.scale = 1.0;
+    this.posx = 0;
+    this.posy = 0;
+    if ((target[0].clientWidth != null) && (target[0].clientHeight != null)) {
+      if (target[0].clientWidth !== 0) {
+        this.width = target[0].clientWidth;
+      }
+      if (target[0].clientHeight !== 0) {
+        this.height = target[0].clientHeight;
+      }
+    }
     this.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     this.svg.setAttributeNS(null, 'version', '1.1');
     this.svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -48,16 +63,80 @@ SVGDrawer = (function() {
     this.svg.setAttribute("height", this.height + "px");
     this.svg.setAttribute("viewBox", "0 0 " + this.width + " " + this.height);
     this.svg.setAttribute("preserveAspectRatio", "xMinYMin");
+    this.svgg = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    this.svg.appendChild(this.svgg);
     target[0].appendChild(this.svg);
+    onWheel = (function(_this) {
+      return function(e) {
+        var bbox, curposx, curposy, pointx, pointy, tx, ty;
+        _this.scale -= e.originalEvent.deltaY * 0.01;
+        if (_this.scale < 0.5) {
+          _this.scale = 0.5;
+        }
+        curposx = e.originalEvent.screenX - _this.left;
+        curposy = e.originalEvent.screenY - _this.top;
+        bbox = _this.svgg.getBBox();
+        pointx = bbox.width / 2;
+        pointy = bbox.height / 2;
+        tx = _this.posx * bbox.width / _this.width + (bbox.x + pointx) * (1 - _this.scale);
+        ty = _this.posy * bbox.height / _this.height + (bbox.y + pointy) * (1 - _this.scale);
+        return _this.svgg.setAttribute("transform", "translate(" + tx + ", " + ty + ") scale(" + _this.scale + ")");
+      };
+    })(this);
+    onDragStart = (function(_this) {
+      return function(e) {
+        console.log("start");
+        e.preventDefault();
+        e.stopPropagation();
+        _this.isdrag = true;
+        _this.startX = e.originalEvent.screenX;
+        return _this.startY = e.originalEvent.screenY;
+      };
+    })(this);
+    onDragEnd = (function(_this) {
+      return function(e) {
+        console.log("end");
+        _this.isdrag = false;
+        _this.startX = 0;
+        return _this.startY = 0;
+      };
+    })(this);
+    onDrag = (function(_this) {
+      return function(e) {
+        var bbox, curx, cury, pointx, pointy, tx, ty;
+        if (!_this.isdrag) {
+          return;
+        }
+        bbox = _this.svgg.getBBox();
+        pointx = bbox.width / 2;
+        pointy = bbox.height / 2;
+        curx = e.originalEvent.screenX;
+        cury = e.originalEvent.screenY;
+        if (curx !== 0 && cury !== 0) {
+          _this.posx += curx - _this.startX;
+          _this.posy += cury - _this.startY;
+        }
+        _this.startX = curx;
+        _this.startY = cury;
+        tx = _this.posx * bbox.width / _this.width + (bbox.x + pointx) * (1 - _this.scale);
+        ty = _this.posy * bbox.height / _this.height + (bbox.y + pointy) * (1 - _this.scale);
+        console.log(_this.posx, _this.posy);
+        return _this.svgg.setAttribute("transform", "translate(" + tx + ", " + ty + ") scale(" + _this.scale + ")");
+      };
+    })(this);
+    target.on('wheel', onWheel);
+    target.on('mousedown', onDragStart);
+    target.on('mousemove', onDrag);
+    target.on('mouseup', onDragEnd);
+    target.on('');
   }
 
   SVGDrawer.prototype.clear = function() {
-    var results;
-    results = [];
     while (this.svg.firstChild != null) {
-      results.push(this.svg.removeChild(this.svg.firstChild));
+      this.svg.removeChild(this.svg.firstChild);
     }
-    return results;
+    this.svgg = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    return this.svg.appendChild(this.svgg);
   };
 
   SVGDrawer.prototype.setViewport = function(option) {
@@ -82,7 +161,7 @@ SVGDrawer = (function() {
     } else {
       path.setAttribute("d", "M" + a);
     }
-    return this.svg.appendChild(path);
+    return this.svgg.appendChild(path);
   };
 
   SVGDrawer.prototype.drawRect = function(arg) {
@@ -105,7 +184,7 @@ SVGDrawer = (function() {
       rect.setAttribute("rx", r);
       rect.setAttribute("ry", r);
     }
-    return this.svg.appendChild(rect);
+    return this.svgg.appendChild(rect);
   };
 
   SVGDrawer.prototype.drawPath = function(a, b, xd) {
@@ -187,8 +266,12 @@ NEZDrawer = (function(superClass) {
 
   NEZDrawer.prototype.show = function(json) {
     var end_line, name, opt, option, plot, production, start_line, target;
-    console.log(json.value[0].value[1]);
-    production = json.value[0];
+    if (json.tag === "Production") {
+      production = json;
+    } else {
+      console.log(json.value[0].value[1]);
+      production = json.value[0];
+    }
     if (production.value.length < 2) {
       return;
     }
@@ -209,6 +292,9 @@ NEZDrawer = (function(superClass) {
       y: start_line.y
     };
     opt = this.plot(target, option);
+    if ((opt == null) || (opt.width == null)) {
+      return;
+    }
     end_line = {
       shape: "path",
       width: 6,
@@ -227,6 +313,8 @@ NEZDrawer = (function(superClass) {
     plot.height = Math.max(start_line.height, opt.height, end_line.height);
     console.log(JSON.parse(JSON.stringify(plot)));
     this.draw(plot);
+    this.elementWidth = plot.width;
+    this.elementHeight = plot.height;
     console.log(plot);
     return this.setViewport(plot);
   };
@@ -239,6 +327,8 @@ NEZDrawer = (function(superClass) {
       case "String":
       case "NonTerminal":
         return this.Textrect(json.tag, json.value, option);
+      case "Name":
+        return this.Textrect("NonTerminal", json.value, option);
       case "And":
       case "Not":
         padding = 5;
@@ -302,6 +392,12 @@ NEZDrawer = (function(superClass) {
         ref1 = json.value;
         for (j = 0, len1 = ref1.length; j < len1; j++) {
           v = ref1[j];
+          if (v.tag === "Tagging") {
+            continue;
+          }
+          if (v.tag === "Replace") {
+            continue;
+          }
           p = this.plot(v, opt);
           opt.x += p.width + sequence_width;
           ret.width += p.width + sequence_width;
@@ -474,6 +570,15 @@ NEZDrawer = (function(superClass) {
           ret.value.push(path);
         }
         return ret;
+      case "New":
+      case "LeftNew":
+      case "Link":
+      case "Is":
+      case "If":
+      case "On":
+      case "Block":
+      case "Def":
+        return this.plot(json.value[json.value.length - 1], option);
     }
   };
 
@@ -581,7 +686,7 @@ NEZDrawer = (function(superClass) {
     }
   };
 
-  NEZDrawer.prototype.drawText = function(text, option) {
+  NEZDrawer.prototype.drawText = function(text, option, target) {
     var fontsize, t;
     t = document.createElementNS("http://www.w3.org/2000/svg", "text");
     t.setAttribute("x", option.x);
@@ -591,7 +696,10 @@ NEZDrawer = (function(superClass) {
     t.setAttribute("font-size", fontsize);
     t.setAttribute("font-family", "monospace");
     t.innerHTML = text;
-    this.svg.appendChild(t);
+    if (target == null) {
+      target = this.svgg;
+    }
+    target.appendChild(t);
     return t;
   };
 
@@ -604,7 +712,7 @@ NEZDrawer = (function(superClass) {
     t.setAttribute("font-size", 12);
     t.setAttribute("font-family", "monospace");
     t.innerHTML = text;
-    this.svg.appendChild(t);
+    this.svgg.appendChild(t);
     return t;
   };
 
@@ -616,7 +724,7 @@ NEZDrawer = (function(superClass) {
       text = this.drawText("XgfTlM|.q", {
         x: -1000,
         y: -1000
-      });
+      }, this.svg);
       box = text.getBBox();
       this.charSize = {};
       this.charSize.height = box.height;
@@ -643,3 +751,7 @@ NEZDrawer = (function(superClass) {
   return NEZDrawer;
 
 })(SVGDrawer);
+
+if (typeof module !== "undefined" && module !== null) {
+  module.exports = NEZDrawer;
+}
