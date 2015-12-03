@@ -1,3 +1,4 @@
+## for developer
 1. clone
 2. npm install
-3. npm start
+3. gulp
